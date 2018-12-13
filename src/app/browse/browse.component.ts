@@ -100,7 +100,7 @@ export class BrowseComponent implements OnInit, OnDestroy {
 
     omarGetDevices() {
         if (!this.omarBluetooth) {
-            return new java.util.List<android.bluetooth.BluetoothDevice>();
+            return new java.util.ArrayList<android.bluetooth.BluetoothDevice>();
         }
         return this.omarBluetooth.getPairedDevices() as java.util.List<android.bluetooth.BluetoothDevice>;
     }    
