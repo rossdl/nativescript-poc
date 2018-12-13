@@ -1,0 +1,22 @@
+<ActionBar class="action-bar">
+    <Label class="action-bar-title" text="Bluetooth"></Label>
+</ActionBar>
+
+<GridLayout class="page page-content">
+    <Label *ngIf="!isBluetoothEnabled" text="Please enable bluetooth" class="text-danger text-center h2"></Label>
+    
+    <StackLayout *ngIf="isBluetoothEnabled">
+      <Button text="Scan" (tap)="scan()" class="btn btn-primary" width="75%"></Button>
+      <Label text="List of devices found" class="h2 text-center m-10"></Label>
+      
+      <ListView [items]="devices" (itemTap)="onItemTap(event)" class="list-group">
+        <ng-template let-device="item">
+          <!-- <Button [text]="device.name" (tap)="connect(device.UUID)"  -->
+          <Button [text]="device.name" (tap)="omarConnect(device.name, device.UUID)" 
+            class="btn btn-primary btn-grey" ></Button>
+        </ng-template>
+      </ListView>
+      
+    </StackLayout>
+  
+</GridLayout>
