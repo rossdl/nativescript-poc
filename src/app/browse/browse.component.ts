@@ -176,25 +176,29 @@ export class BrowseComponent implements OnInit, OnDestroy {
         console.log('omarReset');
         this.omarBluetooth.onStop();
         this.sleep(500);
-        this.omarBluetooth = new me.aflak.bluetooth.Bluetooth(app.android.context);
         this.omarBluetooth.onStart();
         this.sleep(500);
         this.omarBluetooth.enable();
     }
 
     omarPrintMessage(): string {
-        let message = "ABC";
-        // let message = "! 0 200 200 300 1\r\n";
-        // message += "T 5 0 60 0 TEST MESSAGE\r\n";
-        // message += "B QR 50 60 M 2 U 6\r\n";
-        // message += "H4A,E123456789\r\n";
-        // message += "ENDQR\r\n";
-        // message += "PRINT\r\n";
+        //let message = "ABC";
+        let barcode = this.omarRandomBarcode();
+        let message = "! 0 200 200 300 1\r\n";
+        message += "B QR 80 0 M 2 U 6\r\n";
+        message += `H4A,E${barcode}\r\n`;
+        message += "ENDQR\r\n";
+        message += `T 5 0 90 140 ${barcode}\r\n`;
+        message += "PRINT\r\n";
         return message;
     }
 
     omarVendGateMessage(): string {
         return String.fromCharCode(1).concat('\n');
+    }
+
+    omarRandomBarcode(): string {
+        return Array(10).join((Math.random().toString(11)+'00000000000000000').slice(2, 18)).slice(0, 9);
     }
 
     sleep(ms: number): void {
