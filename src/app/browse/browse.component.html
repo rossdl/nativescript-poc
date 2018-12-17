@@ -11,8 +11,7 @@
       
       <ListView [items]="devices" (itemTap)="onItemTap(event)" class="list-group">
         <ng-template let-device="item">
-          <!-- <Button [text]="device.name" (tap)="connect(device.UUID)"  -->
-          <Button [text]="device.name" (tap)="omarConnect(device.name, device.UUID)" 
+          <Button [text]="device.name" (tap)="send(device.name, device.UUID)" 
             class="btn btn-primary btn-grey" ></Button>
         </ng-template>
       </ListView>

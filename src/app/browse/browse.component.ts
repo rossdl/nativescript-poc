@@ -2,11 +2,8 @@ import { Component, OnInit, OnDestroy } from "@angular/core";
 import { Router } from "@angular/router";
 import { Observable, Subscription } from "rxjs";
 import { distinctUntilChanged } from 'rxjs/operators';
-import { Peripheral, StartScanningOptions } from "nativescript-bluetooth";
 import bluetooth = require('nativescript-bluetooth');
-import app = require('application');
-
-declare let me: any;
+import { BluetoothService } from "../services/bluetooth/BluetoothService";
 
 @Component({
     selector: "Browse",
@@ -14,8 +11,6 @@ declare let me: any;
     templateUrl: "./browse.component.html"
 })
 export class BrowseComponent implements OnInit, OnDestroy {
-    private omarBluetooth: any;
-
     isEnabledSubscription: Subscription;
     isBluetoothEnabled = false;
 
@@ -24,7 +19,7 @@ export class BrowseComponent implements OnInit, OnDestroy {
 
     devices: any[];
 
-    constructor(private router: Router) {
+    constructor(private router: Router, private bluetoothService: BluetoothService) {
         //bluetooth.setCharacteristicLogging(false);
     }
 
@@ -35,12 +30,12 @@ export class BrowseComponent implements OnInit, OnDestroy {
             .pipe(distinctUntilChanged())
             .subscribe(enabled => this.isBluetoothEnabled = enabled);
 
-        this.omarStartBluetooth();
+        this.bluetoothService.start();
     }
 
     ngOnDestroy(): void {
         this.isEnabledSubscription.unsubscribe();
-        this.omarStopBluetooth();
+        this.bluetoothService.stop();
     }
 
     public listenToBluetoothEnabled(): Observable<boolean> {
@@ -64,145 +59,59 @@ export class BrowseComponent implements OnInit, OnDestroy {
         this.devices.push({ name, UUID });
     }
 
-    omarStartBluetooth() {
+    listDevices() {
         try {
-            console.log('omarStartBluetooth');
-            //console.dir(me.aflak.bluetooth.Bluetooth);
-
-            //console.log('android context');
-            //console.dir(app.android.context);
-
-            if (me.aflak.bluetooth.Bluetooth) {
-                this.omarBluetooth = new me.aflak.bluetooth.Bluetooth(app.android.context);
-                this.omarBluetooth.onStart();
-                this.omarBluetooth.enable();
-            }
+            let pairedDevices = this.bluetoothService.getPairedDevices();
+            console.log(pairedDevices.length);
+            pairedDevices.forEach(dev => {
+                console.log(dev.Address);
+                let uuid: string = dev.Name.toLowerCase().includes('gate') ? this.cmdGate : this.cmdPrint; //PoC
+                this.addDevice(dev.Name, uuid);
+            });
         }
         catch (e) {
-            console.log('************ omarStartBluetooth ERROR ************')
             console.log(e);
         }
     }
 
-    omarStopBluetooth() {
-        try {
-            console.log('omarStopBluetooth');
-
-            if (this.omarBluetooth) {
-                this.omarBluetooth.onStop();
-            }
-        }
-        catch (e) {
-            console.log('************ omarStopBluetooth ERROR ************')
-            console.log(e);
-        }
-    }
-
-    omarGetDevices() {
-        if (!this.omarBluetooth) {
-            return new java.util.ArrayList<android.bluetooth.BluetoothDevice>();
-        }
-        return this.omarBluetooth.getPairedDevices() as java.util.List<android.bluetooth.BluetoothDevice>;
-    }    
-
-    omarListDevices() {
-        try {
-            console.log('omarListDevices');
-
-            if (this.omarBluetooth) {
-                let devicesOmr = this.omarGetDevices();
-                console.log('devices found', devicesOmr.size());
-                for (let i = 0; i < devicesOmr.size(); i++) {
-                    let dev = devicesOmr.get(i);
-                    let name: string = dev.getName();
-                    let uuid: string = name.toLowerCase().includes('gate') ? this.cmdGate : this.cmdPrint;
-                    let p: Peripheral = { name: name, UUID: uuid, RSSI: 1 };  // use existing Peripheral for now, little change to UI
-                    this.devices.push(p);
-                }
-            }
-        }
-        catch (e) {
-            console.log('************ omarListDevices ERROR ************')
-            console.log(e);
-        }
-    }
-    
-    private connectedName: string = null;
-
-    omarConnect(name: string, peripheral: string) {
+    send(name: string, peripheral: string) {
         // PoC of course
         try {
-            if (this.connectedName !== name) {
-                if (this.omarBluetooth.isConnected()) {
-                    console.log(`Disconnect from ${this.connectedName}`);
-                    this.omarBluetooth.disconnect();
-                }
-
-                console.log(`Connect to ${name}`);
-                this.omarBluetooth.connectToName(name, true);
-            }
-
-            let attempt = 0;
-            while (!this.omarBluetooth.isConnected() && attempt < 20) {
-                this.sleep(500);
-                attempt++;
-            }
-
-            if (!this.omarBluetooth.isConnected()) {
-                console.log('can\'t connect, try again');
-                this.omarReset();
+            this.bluetoothService.connect(name);
+            if (!this.bluetoothService.isConnected()) {
                 return;
             }
 
-            this.connectedName = name;
-
             let message = peripheral === this.cmdGate
-                ? this.omarVendGateMessage()
-                : this.omarPrintMessage();
+                ? this.vendGateMessage()
+                : this.printMessage();
 
             console.log('send message', message);
-            this.omarBluetooth.send(message, null);
+            this.bluetoothService.send(message);
         }
         catch (e) {
-            console.log('************ omarPrint ERROR ************')
             console.log(e);
         }
-        finally {
-            //this.omarBluetooth.disconnect();
-        }
     }
 
-    omarReset() {
-        console.log('omarReset');
-        this.omarBluetooth.onStop();
-        this.sleep(500);
-        this.omarBluetooth.onStart();
-        this.sleep(500);
-        this.omarBluetooth.enable();
-    }
-
-    omarPrintMessage(): string {
+    printMessage(): string {
         //let message = "ABC";
-        let barcode = this.omarRandomBarcode();
+        let barcode = this.randomBarcode();
         let message = "! 0 200 200 300 1\r\n";
         message += "B QR 80 0 M 2 U 6\r\n";
         message += `H4A,E${barcode}\r\n`;
         message += "ENDQR\r\n";
-        message += `T 5 0 90 140 ${barcode}\r\n`;
+        message += `T 5 0 90 180 ${barcode}\r\n`;
         message += "PRINT\r\n";
         return message;
     }
 
-    omarVendGateMessage(): string {
+    vendGateMessage(): string {
         return String.fromCharCode(1).concat('\n');
     }
 
-    omarRandomBarcode(): string {
+    randomBarcode(): string {
         return Array(10).join((Math.random().toString(11)+'00000000000000000').slice(2, 18)).slice(0, 9);
-    }
-
-    sleep(ms: number): void {
-        java.lang.Thread.sleep(ms);
     }
 
     scan() {
@@ -222,27 +131,27 @@ export class BrowseComponent implements OnInit, OnDestroy {
         // };
         // bluetooth.startScanning(options);
 
-        this.omarListDevices();
+        this.listDevices();
     }
 
-    connect(UUID: string) {
-        bluetooth.connect({
-            UUID: UUID,
-            onConnected: (peripheral: Peripheral) => {
-                // alert('Connected');
-                this.router.navigate(['btprinter', UUID]);
-            },
-            onDisconnected: (peripheral: Peripheral) => {
-                this.router.navigate(['browse']);
-            }
-        })
-    }
+    // connect(UUID: string) {
+    //     bluetooth.connect({
+    //         UUID: UUID,
+    //         onConnected: (peripheral: Peripheral) => {
+    //             // alert('Connected');
+    //             this.router.navigate(['btprinter', UUID]);
+    //         },
+    //         onDisconnected: (peripheral: Peripheral) => {
+    //             this.router.navigate(['browse']);
+    //         }
+    //     })
+    // }
 
-    onItemTap(event$: any) {
-        console.log(event$);
-    }
+    // onItemTap(event$: any) {
+    //     console.log(event$);
+    // }
 
-    navigateToController(UUID: string) {
-        this.router.navigate(['btprinter', UUID]);
-    }
+    // navigateToController(UUID: string) {
+    //     this.router.navigate(['btprinter', UUID]);
+    // }
 }

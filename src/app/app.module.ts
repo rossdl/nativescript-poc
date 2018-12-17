@@ -5,6 +5,7 @@ import { AppRoutingModule, COMPONENTS } from "./app-routing.module";
 import { AppComponent } from "./app.component";
 
 import { BarcodeScanner } from 'nativescript-barcodescanner';
+import { BluetoothService } from "./services/bluetooth/BluetoothService";
 
 @NgModule({
     bootstrap: [
@@ -19,6 +20,7 @@ import { BarcodeScanner } from 'nativescript-barcodescanner';
         ...COMPONENTS
     ],
     providers: [
+        BluetoothService,
         BarcodeScanner
     ],
     schemas: [
