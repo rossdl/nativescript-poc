@@ -3,7 +3,7 @@ import { Router } from "@angular/router";
 import { Observable, Subscription } from "rxjs";
 import { distinctUntilChanged } from 'rxjs/operators';
 import bluetooth = require('nativescript-bluetooth');
-import { BluetoothService } from "../services/bluetooth/BluetoothService";
+import { BluetoothService } from "../core/bluetooth/BluetoothService";
 
 @Component({
     selector: "Browse",
@@ -62,7 +62,6 @@ export class BrowseComponent implements OnInit, OnDestroy {
     listDevices() {
         try {
             let pairedDevices = this.bluetoothService.getPairedDevices();
-            console.log(pairedDevices.length);
             pairedDevices.forEach(dev => {
                 console.log(dev.Address);
                 let uuid: string = dev.Name.toLowerCase().includes('gate') ? this.cmdGate : this.cmdPrint; //PoC
