@@ -1,11 +1,12 @@
 <ActionBar class="action-bar">
-    <Label class="action-bar-title" text="Barcode"></Label>
+    <Label class="action-bar-title" text="Scan"></Label>
 </ActionBar>
 
 <GridLayout class="page page-content">
     <StackLayout>
         <Label class="page-icon fa" text="&#xf02a;"></Label>
-        <Button text="Scan" (tap)="scan()" class="btn btn-primary" width="75%"></Button>
-        <Label [text]="scanValue" class="h2 text-center m-10"></Label>
+        <Button text="Barcode" (tap)="scan()" class="btn btn-primary" width="75%"></Button>
+        <Button text="Credit Card" (tap)="card()" class="btn btn-primary" width="75%"></Button>
+        <Label [text]="scanValue" class="h2 text-center m-10" textWrap="true"></Label>
     </StackLayout>
 </GridLayout>

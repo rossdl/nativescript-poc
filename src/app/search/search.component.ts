@@ -1,5 +1,7 @@
 import { Component, OnInit } from "@angular/core";
 import { BarcodeScanner } from "nativescript-barcodescanner";
+import { CardIo } from "digitaltown-nativescript-card-io";
+import { CreditCard } from "digitaltown-nativescript-card-io/card-io.common";
 
 @Component({
     selector: "Search",
@@ -18,7 +20,6 @@ export class SearchComponent implements OnInit {
     }
 
     scan() {
-        console.log("do scan");
         this.barcodeScanner.scan({
             formats: "QR_CODE, CODE_39",
             beepOnScan: true,
@@ -26,6 +27,25 @@ export class SearchComponent implements OnInit {
             console.log("scan result:");
             console.log(r.format, r.text);
             this.scanValue = r.text;
+        });
+    }
+
+    card() {
+        const cardIo = new CardIo();
+
+        cardIo.scan({
+            android: {
+                requireExpiry: true,
+                requireCvv: true,
+                requirePostalCode: false,
+                returnCardImage: false,
+                usePaypalActionbarIcon: false
+            }
+        }).then((result: CreditCard) => {
+            console.log("CARD.IO RESULT >>> ", result);
+            this.scanValue = result.content;
+        }, error => {
+            console.log("CARD.IO ERROR >>> ", error);
         });
     }
 }
